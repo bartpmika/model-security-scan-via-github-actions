@@ -109,7 +109,7 @@ Go to **Settings > Secrets and variables > Actions** in your forked repository a
 | `TSG_ID` | Prisma AIRS Tenant Service Group ID | Found in the Prisma AIRS console under **Settings > Tenant Service Groups**, or embedded in the service account email (the numeric portion). See [TSG ID documentation](https://pan.dev/sase/docs/tenant-service-groups/). |
 | `HF_TOKEN` | HuggingFace access token (for gated models) | Create a token at [HuggingFace Settings > Access Tokens](https://huggingface.co/settings/tokens). Required for gated models like Gemma — you must also accept the model's license on its HuggingFace page. |
 
-A `.env.example` file is provided as a reference for the required values. Copy it to `.env` for local development — it is already gitignored.
+A `.env.example` file is provided as a reference for the required values. Copy it to `.env` and fill in your values for local development — the scripts load it automatically via `python-dotenv`. The `.env` file is gitignored and will not be committed.
 
 > **Tip:** You can also set secrets via the GitHub CLI:
 > ```bash

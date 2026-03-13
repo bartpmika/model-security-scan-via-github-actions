@@ -15,6 +15,9 @@ import time
 
 import requests
 import yaml
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def get_access_token(client_id, client_secret, tsg_id):

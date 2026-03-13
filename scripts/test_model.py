@@ -14,6 +14,9 @@ import subprocess
 import sys
 
 import yaml
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def get_endpoint_info(project_id, region, display_name):
