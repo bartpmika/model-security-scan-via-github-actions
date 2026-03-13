@@ -35,7 +35,8 @@ gcloud ai model-garden models deploy \
   --accelerator-type="${ACCEL_TYPE}" \
   --accelerator-count="${ACCEL_COUNT}" \
   --region="${REGION}" \
-  --display-name="${ENDPOINT_DISPLAY_NAME}" \
+  --endpoint-display-name="${ENDPOINT_DISPLAY_NAME}" \
+  --hugging-face-access-token="${HF_TOKEN:-}" \
   --accept-eula
 
 echo ""

@@ -7,7 +7,7 @@ model:
   huggingface_id: "google/gemma-3-1b-it"
   display_name: "gemma-3-1b-it"
   description: "Google Gemma 3 1B Instruction-Tuned model deployed via Vertex AI Model Garden"
-  version: "1.3"
+  version: "1.4"
 
 deployment:
   machine_type: "g2-standard-12"
