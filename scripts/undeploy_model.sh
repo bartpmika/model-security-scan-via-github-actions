@@ -14,38 +14,42 @@ echo "Looking for endpoint: ${ENDPOINT_DISPLAY_NAME}"
 echo "  Project: ${PROJECT}"
 echo "  Region:  ${REGION}"
 
-ENDPOINT_ID=$(gcloud ai endpoints list \
+ENDPOINT_IDS=$(gcloud ai endpoints list \
   --project="${PROJECT}" \
   --region="${REGION}" \
   --filter="displayName~${ENDPOINT_DISPLAY_NAME}" \
-  --format="value(name)" | head -1 | awk -F/ '{print $NF}')
+  --format="value(name)" | awk -F/ '{print $NF}')
 
-if [ -z "${ENDPOINT_ID}" ]; then
-  echo "No matching endpoint found. Nothing to clean up."
+if [ -z "${ENDPOINT_IDS}" ]; then
+  echo "No matching endpoints found. Nothing to clean up."
   exit 0
 fi
 
-echo "Found endpoint: ${ENDPOINT_ID}"
-echo "Undeploying all models from the endpoint..."
+for ENDPOINT_ID in ${ENDPOINT_IDS}; do
+  echo "Found endpoint: ${ENDPOINT_ID}"
+  echo "Undeploying all models from the endpoint..."
 
-DEPLOYED_MODEL_IDS=$(gcloud ai endpoints describe "${ENDPOINT_ID}" \
-  --project="${PROJECT}" \
-  --region="${REGION}" \
-  --format="value(deployedModels.id)" 2>/dev/null || true)
-
-for dm_id in ${DEPLOYED_MODEL_IDS}; do
-  echo "  Undeploying model: ${dm_id}"
-  gcloud ai endpoints undeploy-model "${ENDPOINT_ID}" \
+  DEPLOYED_MODEL_IDS=$(gcloud ai endpoints describe "${ENDPOINT_ID}" \
     --project="${PROJECT}" \
     --region="${REGION}" \
-    --deployed-model-id="${dm_id}" \
+    --format="value(deployedModels.id)" 2>/dev/null || true)
+
+  for dm_id in ${DEPLOYED_MODEL_IDS}; do
+    echo "  Undeploying model: ${dm_id}"
+    gcloud ai endpoints undeploy-model "${ENDPOINT_ID}" \
+      --project="${PROJECT}" \
+      --region="${REGION}" \
+      --deployed-model-id="${dm_id}" \
+      --quiet
+  done
+
+  echo "Deleting endpoint: ${ENDPOINT_ID}"
+  gcloud ai endpoints delete "${ENDPOINT_ID}" \
+    --project="${PROJECT}" \
+    --region="${REGION}" \
     --quiet
+
+  echo "Endpoint ${ENDPOINT_ID} deleted."
 done
 
-echo "Deleting endpoint..."
-gcloud ai endpoints delete "${ENDPOINT_ID}" \
-  --project="${PROJECT}" \
-  --region="${REGION}" \
-  --quiet
-
-echo "Endpoint ${ENDPOINT_ID} deleted. GPU costs stopped."
+echo "All matching endpoints cleaned up. GPU costs stopped."
