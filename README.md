@@ -108,9 +108,12 @@ Go to **Settings > Secrets and variables > Actions** in your forked repository a
 | `GCP_SA_KEY` | GCP service account JSON key (with Vertex AI Admin role) | Create a service account and download the key via [GCP IAM Console](https://console.cloud.google.com/iam-admin/serviceaccounts). Grant it the **Vertex AI Administrator** role. See [Creating service account keys](https://cloud.google.com/iam/docs/keys-create-delete). |
 | `MODEL_SECURITY_CLIENT_ID` | Prisma AIRS OAuth client ID (service account) | Generate in the Prisma AIRS console under **Settings > Access Control > Service Accounts**. See [Prisma AIRS API Authentication](https://pan.dev/sase/docs/getstarted/). |
 | `MODEL_SECURITY_CLIENT_SECRET` | Prisma AIRS OAuth client secret | Generated alongside the client ID when creating a service account in the Prisma AIRS console. |
-| `TSG_ID` | Prisma AIRS Tenant Service Group ID | Found in the Prisma AIRS console under **Settings > Tenant Service Groups**, or embedded in the service account email (the numeric portion). See [TSG ID documentation](https://pan.dev/sase/docs/tenant-service-groups/). |
+| `MODEL_SECURITY_PROFILE_ID` | Prisma AIRS security profile UUID | Found in the Prisma AIRS console under your security profile settings. |
 | `MODEL_SECURITY_API_ENDPOINT` | Prisma AIRS API endpoint URL | Use `https://api.sase.paloaltonetworks.com/aims` for US deployments. See [AIRS API reference](https://pan.dev/airs/) for regional endpoints. |
+| `TSG_ID` | Prisma AIRS Tenant Service Group ID | Found in the Prisma AIRS console under **Settings > Tenant Service Groups**, or embedded in the service account email (the numeric portion). See [TSG ID documentation](https://pan.dev/sase/docs/tenant-service-groups/). |
 | `HF_TOKEN` | HuggingFace access token (for gated models) | Create a token at [HuggingFace Settings > Access Tokens](https://huggingface.co/settings/tokens). Required for gated models like Gemma — you must also accept the model's license on its HuggingFace page. |
+
+A `.env.example` file is provided as a reference for the required values. Copy it to `.env` for local development — it is already gitignored.
 
 > **Tip:** You can also set secrets via the GitHub CLI:
 > ```bash

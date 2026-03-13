@@ -47,6 +47,7 @@ jobs:
           MODEL_SECURITY_CLIENT_ID: ${{ secrets.MODEL_SECURITY_CLIENT_ID }}
           MODEL_SECURITY_CLIENT_SECRET: ${{ secrets.MODEL_SECURITY_CLIENT_SECRET }}
           MODEL_SECURITY_API_ENDPOINT: ${{ secrets.MODEL_SECURITY_API_ENDPOINT }}
+          MODEL_SECURITY_PROFILE_ID: ${{ secrets.MODEL_SECURITY_PROFILE_ID }}
           TSG_ID: ${{ secrets.TSG_ID }}
         run: python scripts/scan_model.py --config config/model-config.yaml
 

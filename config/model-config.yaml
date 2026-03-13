@@ -17,4 +17,4 @@ deployment:
 
 security:
   scan_enabled: true
-  security_profile_id: "5e3f0695-0960-4cad-9ece-c2bf31e865ca"
+  security_profile_id: ""  # Set via MODEL_SECURITY_PROFILE_ID env var or GitHub Variable

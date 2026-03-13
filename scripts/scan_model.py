@@ -192,6 +192,11 @@ def main():
         print("Set MODEL_SECURITY_CLIENT_ID, MODEL_SECURITY_CLIENT_SECRET, and TSG_ID.")
         sys.exit(1)
 
+    # Allow overriding security_profile_id from environment variable
+    profile_id = os.environ.get("MODEL_SECURITY_PROFILE_ID")
+    if profile_id:
+        config.setdefault("security", {})["security_profile_id"] = profile_id
+
     model_name = config["model"]["huggingface_id"]
 
     print(f"Authenticating with Prisma AIRS (TSG: {tsg_id})...")
