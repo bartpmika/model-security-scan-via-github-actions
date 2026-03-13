@@ -1,0 +1,106 @@
+name: Model Security Scan & Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'config/model-config.yaml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'config/model-config.yaml'
+  workflow_dispatch:
+
+jobs:
+  detect-changes:
+    name: Detect Model Changes
+    runs-on: ubuntu-latest
+    outputs:
+      model_changed: ${{ steps.filter.outputs.model }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            model:
+              - 'config/model-config.yaml'
+
+  security-scan:
+    name: Prisma AIRS Model Security Scan
+    needs: detect-changes
+    if: needs.detect-changes.outputs.model_changed == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Prisma AIRS Model Security Scan
+        env:
+          MODEL_SECURITY_CLIENT_ID: ${{ secrets.MODEL_SECURITY_CLIENT_ID }}
+          MODEL_SECURITY_CLIENT_SECRET: ${{ secrets.MODEL_SECURITY_CLIENT_SECRET }}
+          MODEL_SECURITY_API_ENDPOINT: ${{ secrets.MODEL_SECURITY_API_ENDPOINT }}
+          TSG_ID: ${{ secrets.TSG_ID }}
+        run: python scripts/scan_model.py --config config/model-config.yaml
+
+  deploy-model:
+    name: Deploy Model to Vertex AI
+    needs: security-scan
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Deploy Model to Vertex AI
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ secrets.GCP_REGION }}
+        run: bash scripts/deploy_model.sh
+
+  test-model:
+    name: Test Model Endpoint
+    needs: deploy-model
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Test Model Endpoint
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ secrets.GCP_REGION }}
+        run: python scripts/test_model.py --config config/model-config.yaml
