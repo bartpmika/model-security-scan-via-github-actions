@@ -18,6 +18,8 @@
 
 This repository demonstrates how to integrate **Palo Alto Networks Prisma AIRS Model Security** scanning into a CI/CD pipeline using **GitHub Actions**. When a model configuration changes, the pipeline automatically scans the model against AIRS security policies and **only deploys to Google Cloud Vertex AI if the model passes the security assessment**.
 
+> **Note:** This example is scoped to **HuggingFace models deployed as self-hosted endpoints on Vertex AI**. MaaS (Model as a Service) models and non-HuggingFace Model Garden models are not currently supported.
+
 ### What Gets Scanned
 
 Prisma AIRS Model Security evaluates AI models for:
