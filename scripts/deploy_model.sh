@@ -29,6 +29,33 @@ echo "============================================================"
 
 gcloud config set project "${PROJECT}"
 
+# Clean up any existing endpoint with the same display name to avoid duplicates
+EXISTING_ENDPOINT=$(gcloud ai endpoints list \
+  --region="${REGION}" \
+  --filter="displayName=${ENDPOINT_DISPLAY_NAME}" \
+  --format="value(name)" | head -1 | awk -F/ '{print $NF}')
+
+if [ -n "${EXISTING_ENDPOINT}" ]; then
+  echo "Found existing endpoint: ${EXISTING_ENDPOINT}"
+  echo "Cleaning up before redeploying..."
+  DEPLOYED_MODEL_IDS=$(gcloud ai endpoints describe "${EXISTING_ENDPOINT}" \
+    --region="${REGION}" \
+    --format="value(deployedModels.id)" 2>/dev/null || true)
+  for dm_id in ${DEPLOYED_MODEL_IDS}; do
+    echo "  Undeploying model: ${dm_id}"
+    gcloud ai endpoints undeploy-model "${EXISTING_ENDPOINT}" \
+      --region="${REGION}" \
+      --deployed-model-id="${dm_id}" \
+      --quiet
+  done
+  echo "  Deleting endpoint: ${EXISTING_ENDPOINT}"
+  gcloud ai endpoints delete "${EXISTING_ENDPOINT}" \
+    --region="${REGION}" \
+    --quiet
+  echo "Cleanup complete."
+  echo ""
+fi
+
 gcloud ai model-garden models deploy \
   --model="${MODEL_ID}" \
   --machine-type="${MACHINE_TYPE}" \
