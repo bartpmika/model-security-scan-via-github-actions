@@ -76,6 +76,7 @@ jobs:
         env:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           GCP_REGION: ${{ secrets.GCP_REGION }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: bash scripts/deploy_model.sh
 
   test-model:

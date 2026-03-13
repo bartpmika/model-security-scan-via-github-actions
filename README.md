@@ -110,6 +110,7 @@ Go to **Settings > Secrets and variables > Actions** in your forked repository a
 | `MODEL_SECURITY_CLIENT_SECRET` | Prisma AIRS OAuth client secret | Generated alongside the client ID when creating a service account in the Prisma AIRS console. |
 | `TSG_ID` | Prisma AIRS Tenant Service Group ID | Found in the Prisma AIRS console under **Settings > Tenant Service Groups**, or embedded in the service account email (the numeric portion). See [TSG ID documentation](https://pan.dev/sase/docs/tenant-service-groups/). |
 | `MODEL_SECURITY_API_ENDPOINT` | Prisma AIRS API endpoint URL | Use `https://api.sase.paloaltonetworks.com/aims` for US deployments. See [AIRS API reference](https://pan.dev/airs/) for regional endpoints. |
+| `HF_TOKEN` | HuggingFace access token (for gated models) | Create a token at [HuggingFace Settings > Access Tokens](https://huggingface.co/settings/tokens). Required for gated models like Gemma — you must also accept the model's license on its HuggingFace page. |
 
 > **Tip:** You can also set secrets via the GitHub CLI:
 > ```bash
