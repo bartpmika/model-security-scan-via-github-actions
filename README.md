@@ -1,10 +1,6 @@
 # Palo Alto Networks Prisma AIRS - Model Security in CI/CD
 
 <p align="center">
-  <img src="https://www.paloaltonetworks.com/content/dam/pan/en_US/images/logos/brand/primary-company-logo/PANW_Parent_Brand_Primary_Logo_Color_RGB.png" alt="Palo Alto Networks" width="400"/>
-</p>
-
-<p align="center">
   <strong>Shift-left AI model security. Scan models before they reach production.</strong>
 </p>
 
