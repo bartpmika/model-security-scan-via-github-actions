@@ -41,24 +41,30 @@ def submit_model_scan(api_endpoint, access_token, model_config):
         "Content-Type": "application/json",
     }
 
+    hf_id = model_config["model"]["huggingface_id"]
     scan_payload = {
-        "model_name": model_config["model"]["huggingface_id"],
-        "model_description": model_config["model"].get("description", ""),
         "security_group_uuid": model_config["security"]["security_profile_id"],
-        "metadata": {
+        "model_uri": f"https://huggingface.co/{hf_id}",
+        "labels": {
             "deployment_target": "vertex_ai",
             "machine_type": model_config["deployment"]["machine_type"],
             "version": model_config["model"].get("version", "unknown"),
         },
     }
 
+    print(f"  POST {api_endpoint}/data/v1/scans")
+    print(f"  Payload: {json.dumps(scan_payload, indent=2)}")
+
     response = requests.post(
-        f"{api_endpoint}/v1/scan/models",
+        f"{api_endpoint}/data/v1/scans",
         headers=headers,
         json=scan_payload,
         timeout=60,
     )
-    response.raise_for_status()
+    if not response.ok:
+        print(f"  ERROR: {response.status_code} {response.reason}")
+        print(f"  Response: {response.text}")
+        response.raise_for_status()
     return response.json()
 
 
@@ -72,7 +78,7 @@ def poll_scan_status(api_endpoint, access_token, scan_id, timeout_seconds=300):
     start_time = time.time()
     while time.time() - start_time < timeout_seconds:
         response = requests.get(
-            f"{api_endpoint}/v1/scan/models/{scan_id}",
+            f"{api_endpoint}/data/v1/scans/{scan_id}",
             headers=headers,
             timeout=30,
         )
@@ -97,18 +103,25 @@ def print_scan_results(scan_result, model_name):
     print("  PRISMA AIRS MODEL SECURITY SCAN RESULTS")
     print("=" * 64)
     print(f"  Model:        {model_name}")
+    print(f"  Scan ID:      {scan_result.get('scan_id', scan_result.get('id', 'N/A'))}")
+    print(f"  Status:       {scan_result.get('status', 'N/A')}")
     print(f"  Action:       {scan_result.get('action', 'N/A')}")
     print(f"  Risk Score:   {scan_result.get('risk_score', 'N/A')}")
     print(f"  Category:     {scan_result.get('category', 'N/A')}")
-    print(f"  Scan ID:      {scan_result.get('scan_id', 'N/A')}")
 
-    findings = scan_result.get("findings", [])
-    if findings:
-        print(f"  Findings:     {len(findings)}")
-        for finding in findings:
-            severity = finding.get("severity", "unknown")
-            desc = finding.get("description", "No description")
-            print(f"    [{severity.upper()}] {desc}")
+    # Print rule violations if present
+    violations = scan_result.get("rule_violations", scan_result.get("findings", []))
+    if violations:
+        print(f"  Violations:   {len(violations)}")
+        for v in violations:
+            severity = v.get("severity", v.get("level", "unknown"))
+            desc = v.get("description", v.get("rule_name", "No description"))
+            print(f"    [{str(severity).upper()}] {desc}")
+
+    # Print full response for debugging in CI
+    print()
+    print("  Full API Response:")
+    print(f"  {json.dumps(scan_result, indent=2)}")
 
     print("=" * 64)
     print()
@@ -116,16 +129,29 @@ def print_scan_results(scan_result, model_name):
 
 def evaluate_results(scan_result):
     """Evaluate scan results. Returns True if the model is allowed."""
+    status = scan_result.get("status", "").lower()
     action = scan_result.get("action", "").lower()
     risk_score = scan_result.get("risk_score", 0)
 
-    if action == "block":
+    # Check for explicit block/fail signals
+    if action == "block" or status in ("failed", "blocked"):
         print("FAILED: Model blocked by Prisma AIRS security policy.")
         print("The model will NOT be deployed.")
         return False
 
     if risk_score and int(risk_score) >= 80:
         print(f"FAILED: Risk score {risk_score} exceeds threshold (80).")
+        print("The model will NOT be deployed.")
+        return False
+
+    # Check for rule violations
+    violations = scan_result.get("rule_violations", scan_result.get("findings", []))
+    critical_violations = [
+        v for v in violations
+        if str(v.get("severity", v.get("level", ""))).lower() in ("critical", "high")
+    ]
+    if critical_violations:
+        print(f"FAILED: {len(critical_violations)} critical/high severity violations found.")
         print("The model will NOT be deployed.")
         return False
 
