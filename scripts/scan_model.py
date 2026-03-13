@@ -45,11 +45,12 @@ def submit_model_scan(api_endpoint, access_token, model_config):
     scan_payload = {
         "security_group_uuid": model_config["security"]["security_profile_id"],
         "model_uri": f"https://huggingface.co/{hf_id}",
-        "scan_origin": "cicd",
+        "scan_origin": "MODEL_SECURITY_SDK",
         "labels": [
             {"key": "deployment_target", "value": "vertex_ai"},
             {"key": "machine_type", "value": model_config["deployment"]["machine_type"]},
-            {"key": "version", "value": model_config["model"].get("version", "unknown")},
+            {"key": "version", "value": model_config["model"].get("version", "unknown").replace(".", "-")},
+            {"key": "pipeline", "value": "github-actions"},
         ],
     }
 
