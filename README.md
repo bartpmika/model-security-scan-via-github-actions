@@ -101,15 +101,21 @@ Fork this repository to your GitHub account.
 
 Go to **Settings > Secrets and variables > Actions** in your forked repository and add the following secrets:
 
-| Secret | Description |
-|--------|-------------|
-| `GCP_PROJECT_ID` | Your Google Cloud project ID |
-| `GCP_REGION` | GCP region for deployment (e.g., `us-central1`) |
-| `GCP_SA_KEY` | GCP service account JSON key (with Vertex AI Admin role) |
-| `MODEL_SECURITY_CLIENT_ID` | Prisma AIRS OAuth client ID |
-| `MODEL_SECURITY_CLIENT_SECRET` | Prisma AIRS OAuth client secret |
-| `TSG_ID` | Prisma AIRS Tenant Service Group ID |
-| `MODEL_SECURITY_API_ENDPOINT` | Prisma AIRS API endpoint URL |
+| Secret | Description | How to Obtain |
+|--------|-------------|---------------|
+| `GCP_PROJECT_ID` | Your Google Cloud project ID | Find it in the [GCP Console dashboard](https://console.cloud.google.com/home/dashboard) or run `gcloud config get-value project` |
+| `GCP_REGION` | GCP region for deployment (e.g., `us-central1`) | Choose from [Vertex AI available regions](https://cloud.google.com/vertex-ai/docs/general/locations#available-regions). Use `us-central1` for the widest GPU availability. |
+| `GCP_SA_KEY` | GCP service account JSON key (with Vertex AI Admin role) | Create a service account and download the key via [GCP IAM Console](https://console.cloud.google.com/iam-admin/serviceaccounts). Grant it the **Vertex AI Administrator** role. See [Creating service account keys](https://cloud.google.com/iam/docs/keys-create-delete). |
+| `MODEL_SECURITY_CLIENT_ID` | Prisma AIRS OAuth client ID (service account) | Generate in the Prisma AIRS console under **Settings > Access Control > Service Accounts**. See [Prisma AIRS API Authentication](https://pan.dev/sase/docs/getstarted/). |
+| `MODEL_SECURITY_CLIENT_SECRET` | Prisma AIRS OAuth client secret | Generated alongside the client ID when creating a service account in the Prisma AIRS console. |
+| `TSG_ID` | Prisma AIRS Tenant Service Group ID | Found in the Prisma AIRS console under **Settings > Tenant Service Groups**, or embedded in the service account email (the numeric portion). See [TSG ID documentation](https://pan.dev/sase/docs/tenant-service-groups/). |
+| `MODEL_SECURITY_API_ENDPOINT` | Prisma AIRS API endpoint URL | Use `https://api.sase.paloaltonetworks.com/aims` for US deployments. See [AIRS API reference](https://pan.dev/airs/) for regional endpoints. |
+
+> **Tip:** You can also set secrets via the GitHub CLI:
+> ```bash
+> gh secret set GCP_PROJECT_ID --body "your-project-id"
+> gh secret set GCP_SA_KEY < /path/to/service-account-key.json
+> ```
 
 ### 3. Change the Model
 

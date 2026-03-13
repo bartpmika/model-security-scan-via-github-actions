@@ -4,10 +4,10 @@
 # security scan passes.
 
 model:
-  huggingface_id: "google/gemma-3-1b-it"
-  display_name: "gemma-3-1b-it"
-  description: "Google Gemma 3 1B Instruction-Tuned model deployed via Vertex AI Model Garden"
-  version: "1.0"
+  huggingface_id: "google/gemma-2-2b-it"
+  display_name: "gemma-2-2b-it"
+  description: "Google Gemma 2 2B Instruction-Tuned model deployed via Vertex AI Model Garden"
+  version: "2.0"
 
 deployment:
   machine_type: "g2-standard-12"
