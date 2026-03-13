@@ -161,58 +161,33 @@ python scripts/test_model.py \
   --prompt "What are the benefits of AI model security scanning?"
 ```
 
-### Using gcloud Directly
-
-```bash
-# Find your endpoint ID
-gcloud ai endpoints list --region=us-central1
-
-# Send a prediction request
-gcloud ai endpoints predict ENDPOINT_ID \
-  --region=us-central1 \
-  --json-request=request.json
-```
-
-Where `request.json` contains:
-
-```json
-{
-  "instances": [
-    {
-      "inputs": "Explain model security in one sentence.",
-      "parameters": {
-        "max_tokens": 256,
-        "temperature": 0.7
-      }
-    }
-  ]
-}
-```
-
 ### Using curl with the REST API
+
+The deployed model uses a dedicated Vertex AI endpoint with vLLM serving. Use `rawPredict` with the dedicated endpoint DNS:
 
 ```bash
 # Get your access token
 ACCESS_TOKEN=$(gcloud auth print-access-token)
 
-# Find the endpoint
+# Find the endpoint ID and dedicated DNS
 ENDPOINT_ID=$(gcloud ai endpoints list \
   --region=us-central1 \
   --filter="displayName~gemma-3-1b-it-secure" \
-  --format="value(name)" | head -1)
+  --format="value(name)" | head -1 | awk -F/ '{print $NF}')
 
-# Send a request
+DEDICATED_DNS=$(gcloud ai endpoints describe $ENDPOINT_ID \
+  --region=us-central1 \
+  --format="value(dedicatedEndpointDns)")
+
+# Send a request via rawPredict
 curl -X POST \
   -H "Authorization: Bearer ${ACCESS_TOKEN}" \
   -H "Content-Type: application/json" \
-  "https://us-central1-aiplatform.googleapis.com/v1/${ENDPOINT_ID}:predict" \
+  "https://${DEDICATED_DNS}/v1/projects/${GCP_PROJECT_ID}/locations/us-central1/endpoints/${ENDPOINT_ID}:rawPredict" \
   -d '{
-    "instances": [
-      {
-        "inputs": "What is AI model security?",
-        "parameters": {"max_tokens": 256, "temperature": 0.7}
-      }
-    ]
+    "prompt": "What is AI model security?",
+    "max_tokens": 256,
+    "temperature": 0.7
   }'
 ```
 

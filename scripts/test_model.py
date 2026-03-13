@@ -2,8 +2,9 @@
 """
 Test a deployed Vertex AI model endpoint.
 
-Discovers the endpoint by display name, sends a test prompt,
-and prints the model response. Can be used in CI/CD or locally.
+Discovers the endpoint by display name, sends a test prompt via
+the dedicated endpoint DNS, and prints the model response.
+Can be used in CI/CD or locally.
 """
 
 import argparse
@@ -15,8 +16,8 @@ import sys
 import yaml
 
 
-def find_endpoint(project_id, region, display_name):
-    """Find the endpoint ID for a deployed model by display name."""
+def get_endpoint_info(project_id, region, display_name):
+    """Find the endpoint ID and dedicated DNS for a deployed model."""
     result = subprocess.run(
         [
             "gcloud", "ai", "endpoints", "list",
@@ -32,45 +33,51 @@ def find_endpoint(project_id, region, display_name):
     for ep in endpoints:
         if display_name in ep.get("displayName", ""):
             endpoint_id = ep["name"].split("/")[-1]
-            return endpoint_id
-    return None
+            dedicated_dns = ep.get("dedicatedEndpointDns", "")
+            return endpoint_id, dedicated_dns
+    return None, None
 
 
-def send_prediction(project_id, region, endpoint_id, prompt):
+def send_prediction(project_id, region, endpoint_id, dedicated_dns, prompt):
     """Send a prediction request to the Vertex AI endpoint."""
-    request_payload = {
-        "instances": [
-            {
-                "inputs": prompt,
-                "parameters": {
-                    "max_tokens": 256,
-                    "temperature": 0.7,
-                },
-            }
-        ]
-    }
+    access_token = subprocess.run(
+        ["gcloud", "auth", "print-access-token"],
+        capture_output=True, text=True, check=True,
+    ).stdout.strip()
 
-    # Write request to a temp file for gcloud
-    import tempfile
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-        json.dump(request_payload, f)
-        request_file = f.name
+    # Use dedicated endpoint DNS with rawPredict
+    url = (
+        f"https://{dedicated_dns}/v1/projects/{project_id}"
+        f"/locations/{region}/endpoints/{endpoint_id}:rawPredict"
+    )
+
+    import urllib.request
+    import urllib.error
+
+    request_payload = json.dumps({
+        "prompt": prompt,
+        "max_tokens": 256,
+        "temperature": 0.7,
+    }).encode()
+
+    req = urllib.request.Request(
+        url,
+        data=request_payload,
+        headers={
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
 
     try:
-        result = subprocess.run(
-            [
-                "gcloud", "ai", "endpoints", "predict", endpoint_id,
-                "--project", project_id,
-                "--region", region,
-                "--json-request", request_file,
-            ],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        return json.loads(result.stdout)
-    finally:
-        os.unlink(request_file)
+        with urllib.request.urlopen(req) as resp:
+            return json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode()
+        print(f"ERROR: {e.code} {e.reason}")
+        print(f"Response: {error_body}")
+        raise
 
 
 def main():
@@ -106,7 +113,7 @@ def main():
     print(f"  Region:  {region}")
     print()
 
-    endpoint_id = find_endpoint(project_id, region, display_name)
+    endpoint_id, dedicated_dns = get_endpoint_info(project_id, region, display_name)
 
     if not endpoint_id:
         print(f"ERROR: No endpoint found matching '{display_name}'")
@@ -114,15 +121,21 @@ def main():
         sys.exit(1)
 
     print(f"Found endpoint: {endpoint_id}")
+    print(f"Dedicated DNS: {dedicated_dns}")
     print(f"Sending test prompt: \"{args.prompt}\"")
     print()
 
-    response = send_prediction(project_id, region, endpoint_id, args.prompt)
+    response = send_prediction(project_id, region, endpoint_id, dedicated_dns, args.prompt)
 
     print("=" * 64)
     print("  MODEL RESPONSE")
     print("=" * 64)
-    print(json.dumps(response, indent=2))
+    predictions = response.get("predictions", [])
+    if predictions:
+        for p in predictions:
+            print(p)
+    else:
+        print(json.dumps(response, indent=2))
     print("=" * 64)
     print()
     print("Endpoint test PASSED - model is responding.")
