@@ -88,7 +88,7 @@ def poll_scan_status(api_endpoint, access_token, scan_id, timeout_seconds=300):
         result = response.json()
 
         outcome = result.get("eval_outcome", "").upper()
-        if outcome in ("PASS", "PASSED", "FAIL", "FAILED", "BLOCKED", "COMPLETED"):
+        if outcome in ("PASS", "PASSED", "FAIL", "FAILED", "BLOCKED", "ALLOWED", "COMPLETED"):
             return result
 
         elapsed = int(time.time() - start_time)
@@ -150,15 +150,15 @@ def evaluate_results(scan_result):
         print("The model will NOT be deployed.")
         return False
 
-    if outcome in ("PASS", "PASSED"):
+    if outcome in ("PASS", "PASSED", "ALLOWED"):
         print("PASSED: Model approved by Prisma AIRS security policy.")
         print("The model is cleared for deployment.")
         return True
 
-    # For PENDING or unknown outcomes after polling, treat as pass with warning
-    print(f"WARNING: Scan outcome is '{outcome}'. Treating as passed.")
-    print("The model is cleared for deployment.")
-    return True
+    # For unknown outcomes after polling, fail safe
+    print(f"WARNING: Unexpected scan outcome '{outcome}'. Blocking deployment.")
+    print("The model will NOT be deployed.")
+    return False
 
 
 def main():
@@ -204,7 +204,8 @@ def main():
     # The API returns a UUID and eval_outcome. Poll until scan completes.
     scan_uuid = result.get("uuid")
     outcome = result.get("eval_outcome", "").upper()
-    if scan_uuid and outcome in ("PENDING", "IN_PROGRESS", "QUEUED"):
+    terminal_states = ("PASS", "PASSED", "FAIL", "FAILED", "BLOCKED", "ALLOWED", "COMPLETED")
+    if scan_uuid and outcome not in terminal_states:
         print(f"Scan submitted (UUID: {scan_uuid}). Polling for results...")
         result = poll_scan_status(api_endpoint, token, scan_uuid)
 
