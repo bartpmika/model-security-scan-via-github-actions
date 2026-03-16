@@ -19,6 +19,7 @@
 This repository demonstrates how to integrate **Palo Alto Networks Prisma AIRS Model Security** scanning into a CI/CD pipeline using **GitHub Actions**. When a model configuration changes, the pipeline automatically scans the model against AIRS security policies and **only deploys to Google Cloud Vertex AI if the model passes the security assessment**.
 
 > **Note:** This example is scoped to **HuggingFace models deployed as self-hosted endpoints on Vertex AI**.
+
 ### What Gets Scanned
 
 Prisma AIRS Model Security evaluates AI models for:
@@ -35,7 +36,7 @@ Prisma AIRS Model Security evaluates AI models for:
 |-----------|------------|
 | **AI Model** | Google Gemma 3 1B (via Vertex AI Model Garden + HuggingFace) |
 | **Model Hosting** | Google Cloud Vertex AI Endpoint |
-| **Security Gate** | Palo Alto Networks Prisma AIRS Model Security |
+| **Security Gate** | Palo Alto Networks Prisma AIRS Model Security ([Python SDK](https://docs.paloaltonetworks.com/ai-runtime-security/ai-model-security/model-security-to-secure-your-ai-models/get-started-with-ai-model-security/install-ai-model-security)) |
 | **CI/CD** | GitHub Actions |
 | **Trigger** | Changes to `config/model-config.yaml` |
 
@@ -59,7 +60,7 @@ Prisma AIRS Model Security evaluates AI models for:
                     |
               +-----+-----+
               |           |
-           PASSED      BLOCKED
+           ALLOWED     BLOCKED
               |           |
               v           v
       +-------------+   Pipeline fails.
@@ -258,7 +259,7 @@ This script will find the deployed endpoint, undeploy all models, and delete the
 The workflow (`.github/workflows/model-security-scan.yml`) runs four jobs:
 
 1. **Detect Changes** - Confirms `config/model-config.yaml` was modified
-2. **Security Scan** - Authenticates with Prisma AIRS and scans the model. If the scan fails, the pipeline stops here.
+2. **Security Scan** - Installs the [Prisma AIRS Model Security SDK](https://docs.paloaltonetworks.com/ai-runtime-security/ai-model-security/model-security-to-secure-your-ai-models/get-started-with-ai-model-security/install-ai-model-security) (`model-security-client`) from a private PyPI and scans the model. If the scan returns `BLOCKED`, the pipeline stops here.
 3. **Deploy Model** - Deploys the scanned model to Vertex AI via Model Garden (main branch only)
 4. **Test Model** - Sends a test prompt to verify the endpoint is responding
 
@@ -279,7 +280,8 @@ The workflow can also be triggered manually via the **Actions** tab using the `w
 │   └── model-config.yaml             # Model configuration (trigger file)
 ├── scripts/
 │   ├── deploy_model.sh               # Vertex AI deployment script
-│   ├── scan_model.py                 # Prisma AIRS security scan script
+│   ├── get_pypi_url.sh               # Authenticates with SCM to get private PyPI URL
+│   ├── scan_model.py                 # Prisma AIRS security scan (uses SDK)
 │   ├── test_model.py                 # Endpoint validation script
 │   └── undeploy_model.sh             # Cleanup / cost control script
 ├── requirements.txt                   # Python dependencies
