@@ -39,8 +39,19 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Get Model Security SDK PyPI URL
+        id: pypi
+        env:
+          MODEL_SECURITY_CLIENT_ID: ${{ secrets.MODEL_SECURITY_CLIENT_ID }}
+          MODEL_SECURITY_CLIENT_SECRET: ${{ secrets.MODEL_SECURITY_CLIENT_SECRET }}
+          MODEL_SECURITY_API_ENDPOINT: ${{ secrets.MODEL_SECURITY_API_ENDPOINT }}
+          TSG_ID: ${{ secrets.TSG_ID }}
+        run: echo "url=$(bash scripts/get_pypi_url.sh)" >> "$GITHUB_OUTPUT"
+
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          pip install "model-security-client[all]" --extra-index-url "${{ steps.pypi.outputs.url }}"
 
       - name: Run Prisma AIRS Model Security Scan
         env:
