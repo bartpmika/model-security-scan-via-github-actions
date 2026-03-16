@@ -129,8 +129,8 @@ def main():
     print(f"Sending test prompt: \"{args.prompt}\"")
     print()
 
-    max_retries = 10
-    retry_delay = 30
+    max_retries = 20
+    retry_delay = 90
     for attempt in range(1, max_retries + 1):
         try:
             response = send_prediction(project_id, region, endpoint_id, dedicated_dns, args.prompt)
