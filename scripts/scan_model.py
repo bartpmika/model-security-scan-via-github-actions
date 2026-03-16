@@ -91,7 +91,7 @@ def poll_scan_status(api_endpoint, access_token, scan_id, timeout_seconds=300):
         result = response.json()
 
         outcome = result.get("eval_outcome", "").upper()
-        if outcome in ("PASS", "PASSED", "FAIL", "FAILED", "BLOCKED", "ALLOWED", "COMPLETED"):
+        if outcome in ("ALLOWED", "BLOCKED"):
             return result
 
         elapsed = int(time.time() - start_time)
@@ -146,15 +146,15 @@ def evaluate_results(scan_result):
         print("The model will NOT be deployed.")
         return False
 
-    if outcome in ("FAIL", "FAILED", "BLOCKED"):
+    if outcome == "BLOCKED":
         summary = scan_result.get("eval_summary", "No details provided")
-        print(f"FAILED: Model blocked by Prisma AIRS security policy.")
+        print(f"BLOCKED: Model blocked by Prisma AIRS security policy.")
         print(f"  Summary: {summary}")
         print("The model will NOT be deployed.")
         return False
 
-    if outcome in ("PASS", "PASSED", "ALLOWED"):
-        print("PASSED: Model approved by Prisma AIRS security policy.")
+    if outcome == "ALLOWED":
+        print("ALLOWED: Model approved by Prisma AIRS security policy.")
         print("The model is cleared for deployment.")
         return True
 
@@ -212,8 +212,7 @@ def main():
     # The API returns a UUID and eval_outcome. Poll until scan completes.
     scan_uuid = result.get("uuid")
     outcome = result.get("eval_outcome", "").upper()
-    terminal_states = ("PASS", "PASSED", "FAIL", "FAILED", "BLOCKED", "ALLOWED", "COMPLETED")
-    if scan_uuid and outcome not in terminal_states:
+    if scan_uuid and outcome not in ("ALLOWED", "BLOCKED"):
         print(f"Scan submitted (UUID: {scan_uuid}). Polling for results...")
         result = poll_scan_status(api_endpoint, token, scan_uuid)
 
