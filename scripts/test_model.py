@@ -12,6 +12,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 
 import yaml
 from dotenv import load_dotenv
@@ -128,7 +129,18 @@ def main():
     print(f"Sending test prompt: \"{args.prompt}\"")
     print()
 
-    response = send_prediction(project_id, region, endpoint_id, dedicated_dns, args.prompt)
+    max_retries = 10
+    retry_delay = 30
+    for attempt in range(1, max_retries + 1):
+        try:
+            response = send_prediction(project_id, region, endpoint_id, dedicated_dns, args.prompt)
+            break
+        except Exception as e:
+            if attempt == max_retries:
+                print(f"ERROR: Endpoint not ready after {max_retries} attempts. Giving up.")
+                sys.exit(1)
+            print(f"Attempt {attempt}/{max_retries} failed ({e}). Retrying in {retry_delay}s...")
+            time.sleep(retry_delay)
 
     print("=" * 64)
     print("  MODEL RESPONSE")
