@@ -33,7 +33,7 @@ jobs:
               - 'config/model-config.yaml'
 
   # ---------------------------------------------------------------------------
-  # CORE — Prisma AIRS Model Security Scan
+  # AIRS Model Security Integration — Prisma AIRS Model Security Scan
   #
   # This job is the integration point with Palo Alto Networks Prisma AIRS.
   # It installs the official Model Security SDK from a private PyPI,
@@ -63,7 +63,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      # CORE: Authenticate with Prisma AIRS to get the private PyPI URL
+      # AIRS Model Security Integration: Authenticate with Prisma AIRS to get the private PyPI URL
       # for installing the Model Security SDK.
       - name: Get Model Security SDK PyPI URL
         id: pypi
@@ -74,13 +74,13 @@ jobs:
           TSG_ID: ${{ secrets.TSG_ID }}
         run: echo "url=$(bash scripts/get_pypi_url.sh)" >> "$GITHUB_OUTPUT"
 
-      # CORE: Install the Prisma AIRS Model Security SDK from private PyPI.
+      # AIRS Model Security Integration: Install the Prisma AIRS Model Security SDK from private PyPI.
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
           pip install "model-security-client[all]" --extra-index-url "${{ steps.pypi.outputs.url }}"
 
-      # CORE: Run the security scan. Exits non-zero if the model is BLOCKED,
+      # AIRS Model Security Integration: Run the security scan. Exits non-zero if the model is BLOCKED,
       # which stops the pipeline and prevents deployment.
       - name: Run Prisma AIRS Model Security Scan
         env:
