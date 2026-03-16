@@ -263,6 +263,19 @@ The workflow (`.github/workflows/model-security-scan.yml`) runs four jobs:
 3. **Deploy Model** - Deploys the scanned model to Vertex AI via Model Garden (main branch only)
 4. **Test Model** - Sends a test prompt to verify the endpoint is responding
 
+### Adapting This Pipeline
+
+The workflow is split into **AIRS Model Security integration** steps and **customer-specific** steps. See the comments in `.github/workflows/model-security-scan.yml` for details.
+
+| Job / Step | Type | Notes |
+|---|---|---|
+| **Detect Changes** | Customer-specific | Adapt the path filter to your config structure |
+| **Security Scan** | AIRS Model Security | Keep as-is — authenticates with Prisma AIRS, installs the SDK, and scans the model |
+| **Deploy Model** | Customer-specific | Replace with your deployment target (e.g., AWS SageMaker, Azure ML, on-prem) |
+| **Test Model** | Customer-specific | Replace with your own smoke tests or integration tests |
+
+To add Prisma AIRS scanning to an existing pipeline, copy the **Security Scan** job and its supporting files (`scripts/scan_model.py`, `scripts/get_pypi_url.sh`), then configure the required secrets.
+
 ### Manual Trigger
 
 The workflow can also be triggered manually via the **Actions** tab using the `workflow_dispatch` event.
